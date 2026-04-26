@@ -169,13 +169,13 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("mesaj_sil")
-    .setDescription("Toplu mesaj siler (max 300)")
+    .setDescription("Toplu mesaj siler (max 100)")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addIntegerOption(o =>
       o.setName("adet")
-        .setDescription("Silinecek mesaj sayısı (1-300)")
+        .setDescription("Silinecek mesaj sayısı (1-100)")
         .setMinValue(1)
-        .setMaxValue(300)
+        .setMaxValue(100)
         .setRequired(true)
     ),
 
@@ -203,7 +203,7 @@ client.on(Events.InteractionCreate, async interaction => {
   // ─────────── /ehliyet ───────────
   if (interaction.isChatInputCommand() && interaction.commandName === "ehliyet") {
     if (!yetkili(interaction))
-      return interaction.reply({ content: "❌ Bu komutu kullanma yetkin yok.", ephemeral: false });
+      return interaction.reply({ content: "❌ Bu komutu kullanma yetkin yok.", ephemeral: true });
 
     const panelEmbed = new EmbedBuilder()
       .setTitle("🚗  Ehliyet Yönetim Paneli")
@@ -309,27 +309,105 @@ client.on(Events.InteractionCreate, async interaction => {
     if (!yetkili(interaction))
       return interaction.reply({ content: "❌ Bu komutu kullanma yetkin yok.", ephemeral: true });
 
-    await interaction.deferReply({ ephemeral: true });
     const adet = interaction.options.getInteger("adet");
+
+    const onayEmbed = new EmbedBuilder()
+      .setTitle("🗑️  Mesaj Silme Onayı")
+      .setDescription(`**${adet}** adet mesaj silinecek.
+Bu işlem geri alınamaz, emin misin?`)
+      .setColor(0xED4245)
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`mesaj_sil_onayla_${adet}`)
+        .setLabel("✅  Evet, Sil")
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId("mesaj_sil_iptal")
+        .setLabel("❌  İptal")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    return interaction.reply({ embeds: [onayEmbed], components: [row], ephemeral: true });
+  }
+
+  // ─────────── BUTON: Mesaj sil onayla ───────────
+  if (interaction.isButton() && interaction.customId.startsWith("mesaj_sil_onayla_")) {
+    const adet = parseInt(interaction.customId.replace("mesaj_sil_onayla_", ""), 10);
+
+    await interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("⏳  Siliniyor...")
+          .setDescription(`**${adet}** mesaj siliniyor, lütfen bekle.`)
+          .setColor(0xFEE75C)
+      ],
+      components: []
+    });
 
     try {
       const mesajlar = await interaction.channel.messages.fetch({ limit: adet });
       const silinecek = mesajlar.filter(m => Date.now() - m.createdTimestamp < 12 * 24 * 60 * 60 * 1000);
 
       if (silinecek.size === 0)
-        return interaction.editReply({ content: "❌ Silinebilecek mesaj bulunamadı." });
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle("❌  Bulunamadı")
+              .setDescription("Silinebilecek mesaj bulunamadı.")
+              .setColor(0xED4245)
+          ]
+        });
 
       if (silinecek.size === 1) {
         await silinecek.first().delete();
-        return interaction.editReply({ content: "✅ 1 mesaj silindi." });
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle("✅  Tamamlandı")
+              .setDescription("**1** mesaj silindi.")
+              .setColor(0x57F287)
+              .setTimestamp()
+          ]
+        });
       }
 
       const silinen = await interaction.channel.bulkDelete(silinecek, true);
-      return interaction.editReply({ content: `✅ ${silinen.size} mesaj silindi.` });
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("✅  Tamamlandı")
+            .setDescription(`**${silinen.size}** mesaj silindi.`)
+            .setColor(0x57F287)
+            .setTimestamp()
+        ]
+      });
     } catch (err) {
       console.error("mesaj_sil hata:", err);
-      return interaction.editReply({ content: `❌ Hata: ${err.message}` });
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("❌  Hata")
+            .setDescription(`\`${err.message}\``)
+            .setColor(0xED4245)
+        ]
+      });
     }
+  }
+
+  // ─────────── BUTON: Mesaj sil iptal ───────────
+  if (interaction.isButton() && interaction.customId === "mesaj_sil_iptal") {
+    return interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("↩️  İptal Edildi")
+          .setDescription("Mesaj silme işlemi iptal edildi.")
+          .setColor(0x99AAB5)
+          .setTimestamp()
+      ],
+      components: []
+    });
   }
 
   // ─────────── BUTON: Ehliyet kayıt formu aç ───────────
