@@ -24,15 +24,15 @@ app.get("/", (req, res) => res.send("Bot aktif"));
 app.listen(3000, () => console.log("✅ Web server çalışıyor: port 3000"));
 
 // ============================================================
-//  DEĞİŞKENLER
+//  DEĞİŞTİRİLECEK YERLER
 // ============================================================
-const TOKEN          = process.env.TOKEN;
-const CLIENT_ID      = process.env.CLIENT_ID;
-const GUILD_ID       = process.env.GUILD_ID;
+const TOKEN     = process.env.TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const GUILD_ID  = process.env.GUILD_ID;
 const YETKILI_ROL_ID = "1497222663708610630";
 const LOG_KANAL_ID   = "1497470961392418816";
 const ADMIN_DM_ID    = "1054405916209991740";
-const TAG_ID         = "<@&1497222663708610630>";
+const TAG_ID         = "<@&1497222663708610630>";   // log kanalında taglanacak ID
 // ============================================================
 
 // ================= VERİ =================
@@ -135,10 +135,13 @@ function kayitlarEmbed(sayfa = 0) {
 // ================= KOMUTLAR =================
 const commands = [
 
+  // Herkese görünür — Discord'a açıkça belirtiliyor
   new SlashCommandBuilder()
     .setName("ehliyet")
-    .setDescription("Ehliyet panelini açar"),
+    .setDescription("Ehliyet panelini açar")
+    .setDefaultMemberPermissions(null),
 
+  // Aşağıdakiler Discord arayüzünde sadece Administrator'lara görünür
   new SlashCommandBuilder()
     .setName("kayitlar")
     .setDescription("Ehliyet kayıtlarını listeler")
