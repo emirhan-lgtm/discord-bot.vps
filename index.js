@@ -231,7 +231,7 @@ client.on(Events.InteractionCreate, async interaction => {
         .setStyle(ButtonStyle.Danger)
     );
 
-    return interaction.reply({ embeds: [panelEmbed], components: [row], ephemeral: true });
+    return interaction.reply({ embeds: [panelEmbed], components: [row] });
   }
 
   // ─────────── /kayitlar ───────────
