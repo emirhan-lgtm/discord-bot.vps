@@ -203,7 +203,7 @@ client.on(Events.InteractionCreate, async interaction => {
   // ─────────── /ehliyet ───────────
   if (interaction.isChatInputCommand() && interaction.commandName === "ehliyet") {
     if (!yetkili(interaction))
-      return interaction.reply({ content: "❌ Bu komutu kullanma yetkin yok.", ephemeral: true });
+      return interaction.reply({ content: "❌ Bu komutu kullanma yetkin yok.", ephemeral: false });
 
     const panelEmbed = new EmbedBuilder()
       .setTitle("🚗  Ehliyet Yönetim Paneli")
